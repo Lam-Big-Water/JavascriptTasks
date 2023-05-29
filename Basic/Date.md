@@ -1,0 +1,54 @@
+# Date
+
+
+1. Write a JavaScript program to display the current day and time in the following format.
+    > Sample Output: Today is: Monday.
+
+    > Current time is : 10PM : 05 : 00 .
+
+---
+
+```javascript
+const demo = document.getElementById('demo');
+
+const currentDayTime = () => {
+    let today = new Date();
+    let day = today.getDay();
+    let hour = today.getHours();
+    let minute = today.getMinutes();
+    let second = today.getSeconds();
+}
+
+let dayList = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+let t = '';
+
+t = (hour > 12) ? t = 'PM' : t = 'AM';
+
+minute = (minute < 10) ? minute = '0' + minute : minute;
+second = (second < 10) ? second = '0' + second : second;
+
+return `Today is : ${dayList[day]} Current time is ${hour}${t}:${minute}:${second}`;
+
+demo.innerText = currentDayTime();
+```
+
+Explanations: Date objects are based on a time value that is the number of milliseconds since 1 January, 1970 UTC. 
+
+
+Project Difficulties:
+1. How to create day list ?
+    ```javascript
+    let dayList = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    ```
+
+2. How to judge time is AM or PM ?
+    ```javascript
+    t = (hour > 12) ? t = 'PM' : t = 'AM';
+    ```
+
+3. How to maintain a double-digit format ?
+    ```javascript
+    minute = (minute < 10) ? minute = '0' + minute : minute;
+    second = (second < 10) ? second = '0' + second : second;
+    ```
