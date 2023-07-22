@@ -229,8 +229,118 @@ alert((message == 'Employee') ? 'Hello' :
 (message == '') ? 'No login' : 
 '');
 
+---
+---
 
+logical-operators
+
+What's the result of OR?
+importance: 5
+What is the code below going to output?
+
+```javascript
+alert( null || 2 || undefined );
+```
+The answer is 2, that's the first truthy value.
+
+What's the result of OR'ed alerts?
+importance: 3
+What will the code below output?
+
+```javascript
+alert( alert(1) || 2 || alert(3) );
+```
+The answer: first 1, then 2.
+
+
+What is the result of AND?
+importance: 5
+What is this code going to show?
+
+```javascript
+alert( 1 && null && 2 );
+```
+The answer: null, because it's the first falsy value from the list.
+
+
+What is the result of AND'ed alerts?
+importance: 3
+What will this code show?
+
+```javascript
+alert( alert(1) && alert(2) );
+```
+The answer: 1, and then undefined.
+
+
+The result of OR AND OR
+importance: 5
+What will the result be?
+
+```javascript
+alert( null || 2 && 3 || 4 );
+```
+The answer: 3. The precedence of AND && is higher than ||, so it executes first.
+
+
+Check the range between
+importance: 3
+Write an if condition to check that age is between 14 and 90 inclusively.
+
+“Inclusively” means that age can reach the edges 14 or 90.
+
+```javascript
+function getRandomIntInclusive(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+let value = getRandomIntInclusive(0, 120);
+alert(value);
+
+let output = (value >= 14 && value <= 90) ? alert('that age is between 14 and 90') : alert('that age is out of range');
+
+```
+
+A question about "if"
+importance: 5
+Which of these alerts are going to execute?
+
+What will the results of the expressions be inside if(...)?
+
+```javascript
+if (-1 || 0) alert( 'first' );
+if (-1 && 0) alert( 'second' );
+if (null || -1 && 1) alert( 'third' );
+```
+The answer: the first and the third will execute.
+
+
+Check the login
+importance: 3
+Write the code which asks for a login with prompt.
+
+If the visitor enters "Admin", then prompt for a password, if the input is an empty line or Esc – show “Canceled”, if it’s another string – then show “I don’t know you”.
+
+```javascript
+let account = prompt('who\'s there ?', '');
+
+if (account == 'Admin') {
+  let password = prompt('Password?', '');
+
+  if (password == 'TheMaster') {
+    alert('Welcome!');
+  } else if (password == null) {
+    alert('Canceled');
+  } else (alert('Wrong password'));
+
+} else if (account == null) {
+  alert('Canceled');
+} else (alert('I don\'t know you'));
+```
 */
+
 
 
 
