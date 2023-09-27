@@ -26,6 +26,61 @@ let promise = new Promise (function (resolve, reject) {
     // todo: "state" - initially "pending", then changes to either "fulfilled" & "rejected" when "resolve" & "reject" is called.
     // todo: - initially "undefined", then changes to value & error when resolve (value) & reject (error) is called.
     
+    // * figure https://javascript.info/article/promise-basics/promise-resolve-reject.svg
 })
+
+// todo: Here's an example of a promise constructor and a simple executor function with "producing code" that takes time.
+let promise_2 = new Promise (function (resolve, reject) {
+    setTimeout(() => resolve("done"), 1000);
+});
+// * figure https://javascript.info/article/promise-basics/promise-resolve-1.svg
+// ! A promise that is either resolved or rejected is called "settled", as opposed to an initially "pending" promise.
+
+
+// * There can be only a single result or an error
+let promise_3 = new Promise(function (resolve, reject) {
+    resolve("done");
+
+    reject(new Error("...")); // ignored
+    setTimeout(() => resolve("...")); // ignored
+    // * Also, "resolve/reject" expect only one argument (or none) amd will ignore additional arguments.
+})
+
+// * Immediately calling "resolve/reject"
+let promise_4 = new Promise(function (resolve, reject) {
+    // not taking our time to do the job
+    resolve(123); // immediately give the result: 123
+});
+
+// * The "state" and "result" are internal. We can use the method ".then/.catch/.finally" to access them.
+// Todo: ".then"
+promise.then(
+    function (result) {/* handle a successful result */},
+    function (error) {/* handle an error */}
+);
+// * For instance, here's a reaction to a successfully resolved promise:
+let promise_5 = new Promise(function (resolve, reject) {
+    setTimeout(() => resolve("done"), 1000);
+});
+// resolve runs the first function in .then
+promise.then(
+    // * The first function was executed. And in the case of a rejection, the second one.
+    result => alert(result), // shows "done!" after 1 second
+    error => alert(error) // doesn't run
+);
+
+// todo: If we're interested only in successful completions, then we can provide only one function argument to ".then":
+let promise_6 = new Promise(resolve => {
+    setTimeout(() => resolve("done!"), 1000);
+});
+promise.then(alert); // shows "done!" after 1 second
+
+// * If we're interested only in errors, then we can use "null" as the first argument:
+// todo: .catch(errorHandlingFunction)
+let promise_7 = new Promise((resolve, reject) => {
+    setTimeout(() => reject(new Error("Whoops!")), 1000);
+});
+// * .catch(f) is the same as promise.then(null, f). The call .catch(f) is a complete analog of .then(null, f), it's just a shorthand.
+promise_7.catch(alert);
 
 
