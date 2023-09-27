@@ -83,4 +83,52 @@ let promise_7 = new Promise((resolve, reject) => {
 // * .catch(f) is the same as promise.then(null, f). The call .catch(f) is a complete analog of .then(null, f), it's just a shorthand.
 promise_7.catch(alert);
 
+// * finally 
+// todo: finally is to set up a handler for performing cleanup/finalizing after the previous operations are complete.
+new Promise((resolve, reject) => {
+    // call resolve or reject
+})
+    // runs when the promise is settled, doesn't matter successfully or not
+    .finally(() => 'stop loading indicator')
+    // so the loading indicator is always stopped before we go on
+    .then(result => 'show result', err => 'show error');
 
+
+// ! There are important differences:
+// ! 1.A "finally" handler has no arguments.
+// ! 2.A "finally" handler `passes through` the result or error to the next suitable handler.
+// ! 3.A "finally" handler also shouldn't return anything. If it does, returned value is silently ignored.
+new Promise((resolve, reject) => {
+    setTimeout(() => resolve("value"), 2000);
+    throw new Error('error');
+})
+    .finally(() => alert("Promise ready")) // triggers first
+    .then(result => alert(result)) // .then shows "value"
+    .catch(err => alert(err)); // .catch shows the error
+
+    // * Promises are more flexible. We can add handlers any time: if the result is already there, they just execute.
+    // the promise becomes resolved immediately upon creation
+    let promise_8 = new Promise(resolve => resolve("done!"));
+    promise_8.then(alert); // done! (shows up right now)
+
+// todo: rewrite the "loadScript function"
+function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+        let script = document.createElement('script');
+        script.src = src;
+
+        script.onload = () => resolve(script);
+        script.onerror = () => reject(new Error(`Script load error for ${src}`));
+
+        document.head.append(script);
+    });
+}
+
+let promise_src = loadScript("https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.js");
+
+promise_src.then(
+    script => alert(`${script.src} is loaded`),
+    error => alert(`Error: ${error.message}`)
+);
+
+promise_src.then(script => alert('Another handler...'));
