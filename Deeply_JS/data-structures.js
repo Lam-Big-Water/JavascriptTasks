@@ -85,7 +85,7 @@ const game = {
   scored: ['Lewandowski', 'Gnarby', 'Lewandowski', 'Hummels'],
   date: 'Nov 9th, 2037',
   odds: {
-    team1: 1.33,
+    team1: 11.33,
     x: 3.25,
     team2: 6.5,
   },
@@ -126,22 +126,22 @@ GOOD LUCK 😀
 */
 
 
-document.body.append(document.createElement('textarea'));
-document.body.append(document.createElement('button'));
+// document.body.append(document.createElement('textarea'));
+// document.body.append(document.createElement('button'));
 
-document.querySelector('button').addEventListener('click', function() {
-  const text = document.querySelector('textarea').value;
-  const rows = text.split('\n');
+// document.querySelector('button').addEventListener('click', function() {
+//   const text = document.querySelector('textarea').value;
+//   const rows = text.split('\n');
 
-  for(const [i, row] of rows.entries()) {
-    const [first , second] = row.toLowerCase().trim().split('_');
-    const output = `${first}${second.replace(
-      second[0],
-      second[0].toUpperCase()
-    )}`;
-    console.log(`${output.padEnd(20)}${'✅'.repeat(i + 1)}`);
-  }
-})
+//   for(const [i, row] of rows.entries()) {
+//     const [first , second] = row.toLowerCase().trim().split('_');
+//     const output = `${first}${second.replace(
+//       second[0],
+//       second[0].toUpperCase()
+//     )}`;
+//     console.log(`${output.padEnd(20)}${'✅'.repeat(i + 1)}`);
+//   }
+// })
 
 
 // Coding Challenge #3
@@ -171,6 +171,15 @@ const gameEvents = new Map([
   [80, '⚽️ GOAL'],
   [92, '🔶 Yellow card'],
 ]);
+// console.log(gameEvents);
+const events = [...new Set(gameEvents.values())];
+// console.log(events);
+// console.log(gameEvents.size);
+const average = 90 / (gameEvents.size - 1);
+console.log(`An event happened, on average, every ${average} minutes`);
+const time = [...gameEvents.keys()].pop();
+console.log(time);
+// console.log(`An event happened, on average, every ${time / gameEvents.size} minutes`);
 
 //1.
 // const events = [...new Set(gameEvents.values())];
@@ -217,8 +226,15 @@ BONUS: Create an object called 'scorers' which contains the names of the players
 
 GOOD LUCK 😀
 */
+const scorers = {};
+for (const player of game.scored) {
+  console.log(player);
+  scorers[player] ? scorers[player]++ : (scorers[player] = 1);
+}
+console.log(scorers);
 /*
 //1.
+
 
 for (const [k,v] of game.scored.entries()) {
   console.log(`Goal${k + 1}: ${v}`);
@@ -300,7 +316,23 @@ const printGoals = function(...players) {
 };
 printGoals(...game.scored);
 
+// 6.
+const printGoals = function(players) {
+  let counter = {};
+	for (let player of players) {
+  	if (counter[player]) {
+    	counter[player] += 1;
+    } else {
+      counter[player] = 1;
+    }
+  }
+  return counter;
+};
+
 //7.
 team1 < team2 && console.log('Team 1 is more likely to win');
 team1 > team2 && console.log('Team 2 is more likely to win');
 */
+const {team1, x: draw, team2} = game.odds;
+team1 < team2 && console.log('Team 1 is more likely to win');
+team1 > team2 && console.log('Team 2 is more likely to win');
