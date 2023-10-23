@@ -242,7 +242,7 @@ allData = {alpha: 'a', beta: 'b', ...providedData2};
 asserts.deepEqual(allData, {alpha: 1, beta: 'b'});
 // * With spreading, we can change ".alpha" non-destructively - we make a copy of obj where ".alpha" has a different value:
 const oldObj = {alpha: 'a', beta: 'b'};
-const updatedObj = {...obj, alpha: 1};
+const updatedObj = {...oldObj, alpha: 1};
 assert.deepEqual(updatedObj, {alpha: 1, beta: 'b'});
 
 // * 28.4.4 "Destructive spreading": Object.assign()[ES6]
@@ -295,6 +295,307 @@ obj.someMethod('a', 'b'); // (B)
 // * The best way to understand this is as an implicit parameter of ordinary functions (and therefore methods, too).
 
 // * 28.5.3 Methods and .call()
+// * Methods are functions and functions have methods themselves.
+obj.someMethod('a', 'b');
+// * This invocation is equivalent to:
+obj.someMethod.call(obj, 'a', 'b');
+// * Which is also equivalent to:
+const func = obj.someMethod;
+func.call(obj, 'a', 'b');
+// * .call() makes the normally implicit parameter "this" explicit: When invoking a function via .call(),
+// * -the first parameter is "this", followed by the regular (explicit) function parameters.
+
+
+// * 28.5.4 Methods and .bind()
+// todo: In the following code, we use .bind() to turn method .says() into the stand-alone function func():
+const loveSong = {
+    first: 'Jane',
+    says(text) {
+        return `${this.first} says "${text}"`; // (A)
+    },
+};
+// * Setting "this" to loveSong via .bind() is crucial here. Otherwise, func_() wouldn't work properly because
+// * -"this" is used in line A.
+const func_ = loveSong.says.bind(loveSong, 'hello');
+asserts.equal(func(), 'Jane says "hello');
+
+// * 28.5.5 "this" pitfall: extracting methods
+// todo: In the following example, we fail when we extract method orangeMoon.says(), store it in the fun, and function-call fun.
+const orangeMoon = {
+    first: 'hidden',
+    says(text) {
+        return `${this.first} says "${text}"`;
+    },
+};
+const fun = orangeMoon.says; // extract the method
+asserts.throws(
+    () => fun('hello'), // (A)
+    {
+        name: 'TypeError',
+        message: "Cannot read properties of undefined (reading 'first')",
+    }
+);
+// * "this" is undefined. Line A is therefore equivalent to:
+assert.throws(
+    () => orangeMoon.says.call(undefined, 'hello'), // `this` is undefined!
+    {
+        name: 'TypeError',
+        message: "Cannot read properties of undefined (reading 'first')",
+    }
+);
+
+// ? How do we fix this ? We need to use .bind() to extract method .says():
+// * The .bind() ensures that `this` is always orangeMoon when we call func2().
+const func2 = orangeMoon.says.bind(orangeMoon);
+asserts.equal(func2('hello'), 'Jane says "hello"');
+// * We can also use arrow functions to extract methods:
+const func3 = text => orangeMoon.says(text);
+asserts.equal(func3('hello'), 'Jane says "hello"');
+
+// * Actual web development:
+class ClickHandler {
+    constructor(id, elem) {
+        this.id = id;
+        elem.addEventListener('click', this.handlerClick); // (A)
+    }
+    handlerClick(event) {
+        alert('Clicked' + this.id);
+    }
+}
+// * In line A, we don't extract the method .handleClick()properly. Instead, we should do:
+const listener = this.handleClick.bind(this);
+elem.addEventListener('click', listener);
+// Later, possibly:
+elem.removeEventListener('click', listener);
+// * Each invocation of .bind() creates a new function. That's why we need to store the result somewhere of we want to remove it later on.
+
+// ? 28.5.5.2 How to avoid the pitfall of extracting methods ?
+// * By binding `this` or by using an arrow function.
+
+// * 28.5.6 `this` pitfall: accidentally shadowing `this`
+// ! Accidentally shadowing `this` is only an issue with ordinary functions - Arrow functions don't shadow `this`.
+// ? Consider the following problem: when we are inside an ordinary function, we can't access
+// ? -the `this` of the surrounding scope because the ordinary function has its own `this`.
+// ? -In other words, a variable in an inner scope hides a variable in an outer scope. That is called `shadowing`.
+const prefixer = {
+    prefix: '==>',
+    prefixStringArray(stringArray) {
+        return stringArray.map(
+            function (x) {
+                return this.prefix + x; // (A)
+            }
+        );
+    },
+};
+asserts.throws(
+    () => prefixer.prefixStringArray(['a', 'b']),
+    {
+        name: 'TypeError',
+        message: "Cannot read properties of undefined (reading 'prefix')",
+    }
+);
+
+// todo: The simplest way to fix this problem is via an arrow function, which doesn't have its own this and therefore doesn't shadow anything:
+const fixPrefixer = {
+    prefix: '==>',
+    prefixStringArray(stringArray) {
+        return stringArray.map(
+            () => {
+                return this.prefix + x;
+            }
+        );
+    },
+};
+asserts.deepEqual(
+    fixPrefixer.prefixStringArray(['a', 'b']),
+    ['==> a', '==> b']
+);
+// todo: We can also store `this` in a different variable (line A), so that it doesn't get shadowed:
+prefixStringArray(stringArray) {
+    const that = this; // (A)
+    return stringArray.map(
+      function (x) {
+        return that.prefix + x;
+      });
+  },
+// todo: Another option is to specify a fixed `this` for callback via .bing() (line A):
+prefixStringArray(stringArray) {
+    return stringArray.map(
+        function (x) {
+            return this.prefix + x;
+        }.bind(this) // (A)
+    );
+},
+// todo: Lastly .map() lets us specify a value for `this` (line A) that it uses when invoking the callback:
+prefixStringArray(stringArray) {
+    return stringArray.map(
+      function (x) {
+        return this.prefix + x;
+      },
+      this); // (A)
+  },
+
+// * 28.5.6.1 Avoiding the pitfall of accidentally shadowing `this`
+
+// * 28.5.7 The value of `this` in various contexts (advanced)
+// ? What is the value of `this` in various contexts ?
+// * Inside a callable entity, the value of `this` depends on how the callable entity 
+// * => is invoked and what kind of callable entity it is:
+/*
+* Function call:
+*  Ordinary functions: this === undefined(in strict mode)
+*  Arrow functions: `this` is same as in surrounding scope(lexical `this`)
+* Method call: `this` is receiver of call
+* New: `this` refers to the newly created instance
+
+* We can also access `this` in all common top-level scopes:
+  * <script> element: this === globalThis
+  * ECMA-Script modules: this === undefined
+  * CommonJS modules: this === module.exports
+
+*/
+
+// * 28.6 Optional chaining for property getting and method calls [ES2020] (advanced)
+// * The following kinds of optional chaining operations exist:
+obj?.prop // optional fixed property getting
+obj?.[<<expr>>] // optional dynamic property getting
+func?.(<<arg0>>, <<arg1>>) // optional function or method
+
+/*
+
+* The rough idea is:
+    * If the value before the question mark is neither `undefined` nor `null`,
+    * -then perform the operation after the question mark.
+    
+    * Otherwise, return `undefined`.
+*/
+// * Each of the three syntaxes is covered in more detail later. These are a few first examples:
+> null?.prop
+undefined
+> {prop: 1}?.prop
+1
+
+> null?.(123)
+undefined
+> String?.(123)
+'123'
+
+// * 28.6.1 Example: optional fixed property getting
+const persons = [
+    {
+      surname: 'Zoe',
+      address: {
+        street: {
+          name: 'Sesame Street',
+          number: '123',
+        },
+      },
+    },
+    {
+      surname: 'Mariner',
+    },
+    {
+      surname: 'Carmen',
+      address: {
+      },
+    },
+  ];
+// * We can use optional chaining to safely extract street names:
+const streetNames = persons.map(
+    p => p.address?.street?.name);
+  assert.deepEqual(
+    streetNames, ['Sesame Street', undefined, undefined]
+);
+
+// * 28.6.1.1 Handling defaults via nullish coalescing
+// todo: The nullish coalescing operator allows us to use the default value '(no name)' instead of undefined:
+streetNames = persons.map(
+    p => p.address?.street?.name ?? '(no name)');
+  assert.deepEqual(
+    streetNames, ['Sesame Street', '(no name)', '(no name)']
+  );
+
+// * 28.6.2 The operators in more detail (advanced)
+// * 28.6.2.1 Optional fixed property getting
+o?.prop
+(o !== undefined && o !== null) ? o.prop : undefined
+assert.equal(undefined?.prop, undefined);
+assert.equal(null?.prop,      undefined);
+assert.equal({prop:1}?.prop,  1);
+
+// * 28.6.2.2 Optional dynamic property getting
+o?.[«expr»]
+(o !== undefined && o !== null) ? o[«expr»] : undefined
+const key = 'prop';
+assert.equal(undefined?.[key], undefined);
+assert.equal(null?.[key], undefined);
+assert.equal({prop:1}?.[key], 1);
+
+// * 28.6.2.3 Optional function or method call
+f?.(arg0, arg1)
+(f !== undefined && f !== null) ? f(arg0, arg1) : undefined
+assert.equal(undefined?.(123), undefined);
+assert.equal(null?.(123), undefined);
+assert.equal(String?.(123), '123');
+
+// ! Note that this operator produces an error if its left-hand side is not callable:
+assert.throws(
+    () => true?.(123),
+    TypeError);
+
+// * 28.6.3 Short-circuiting with optional property getting
+function invokeM(value) {
+    return value?.a.b.m(); // (A)
+  }
+  
+  const obj = {
+    a: {
+      b: {
+        m() { return 'result' }
+      }
+    }
+  };
+  assert.equal(
+    invokeM(obj), 'result'
+  );
+  assert.equal(
+    invokeM(undefined), undefined // (B)
+  );
+// * Other short-circuiting operators are:
+(a && b) // : b is only evaluated if a is truthy.
+(a || b) // : b is only evaluated if a is falsy.
+(c ? t : e) // : If c is truthy, t is evaluated. Otherwise, e is evaluated.
+
+// * 28.6.4 Optional chaining: downsides and alternatives
+// * Optional chaining also has downsides:
+// * Deeply nested structures are more difficult to manage & harder to debug.
+
+// * An alternative to optional chaining is to extract the information once, in a single location:
+// * We can either write a helper function that extracts the data.
+// * Or we can write a function whose input is deeply nested data and whose output is simpler, normalized data.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

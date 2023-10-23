@@ -1,3 +1,3 @@
 function newFunction () {
-    console.log('I\'m New Function');
+    alert('I\'m New Function');
 }

@@ -99,7 +99,7 @@ new Promise((resolve, reject) => {
 // ! 2.A "finally" handler `passes through` the result or error to the next suitable handler.
 // ! 3.A "finally" handler also shouldn't return anything. If it does, returned value is silently ignored.
 new Promise((resolve, reject) => {
-    setTimeout(() => resolve("value"), 2000);
+    setTimeout(() => resolve("value"), 2000); // ignored
     throw new Error('error');
 })
     .finally(() => alert("Promise ready")) // triggers first
@@ -130,5 +130,5 @@ promise_src.then(
     script => alert(`${script.src} is loaded`),
     error => alert(`Error: ${error.message}`)
 );
-
+// * The outer code can add handlers
 promise_src.then(script => alert('Another handler...'));

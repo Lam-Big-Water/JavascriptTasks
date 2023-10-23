@@ -1,4 +1,4 @@
-// ? We have a sequence of asynchronous tasks to ne performed one after another ?
+// ? We have a sequence of asynchronous tasks to be performed one after another ?
 // * Promises chaining
 // *    https://javascript.info/article/promise-chaining/promise-then-chain.svg
 // * The whole works, because every call to a ".then" returns a new promise, 
