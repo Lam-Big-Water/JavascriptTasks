@@ -574,31 +574,492 @@ function invokeM(value) {
 // * We can either write a helper function that extracts the data.
 // * Or we can write a function whose input is deeply nested data and whose output is simpler, normalized data.
 
+// * 28.6.5 Frequently asked questions
+// * 28.6.5.1 What is a good mnemonic for the optional chaining operator (?.)? 
+// todo: IF (?) the left-hand side is not nullish
+// todo: THEN (.) access a property.
+
+// * 28.6.5.3 Why does null?.prop evaluate to undefined and not null? 
+/* 
+* The operator ?. is mainly about its right-hand side: Does property .prop exist? If not, stop early.
+* Therefore, keeping information about its left-hand side is rarely useful.
+*/
+
+// * 28.7 Dictionary objects (advanced)
+// * Objects work best as fixed-layout objects. But before ES6, JavaScript did not have a data structure for dictionaries (ES6 brought Maps). 
+// * 28.7.1 Quoted keys in object literals
+// * So far, we have always used fixed-layout objects. Property keys were fixed tokens that had to be valid identifiers and internally became strings:
+const obj = {
+    mustBeAnIdentifier: 123,
+  };
+  
+  // Get property
+  assert.equal(obj.mustBeAnIdentifier, 123);
+  
+  // Set property
+  obj.mustBeAnIdentifier = 'abc';
+  assert.equal(obj.mustBeAnIdentifier, 'abc');
+
+// * Two syntaxes enable us to use arbitrary strings as property keys.
+const obj = {
+    'Can be any string!': 123,
+  };
+// Get property
+assert.equal(obj['Can be any string!'], 123);
+
+// Set property
+obj['Can be any string!'] = 'abc';
+assert.equal(obj['Can be any string!'], 'abc');
+
+// We can also use these syntaxes for methods:
+const obj = {
+    'A nice method'() {
+      return 'Yes!';
+    },
+  };
+  
+  assert.equal(obj['A nice method'](), 'Yes!');
+
+// * 28.7.2 Computed keys in object literals 
+const obj = {
+    ['Hello world!']: true,
+    ['p'+'r'+'o'+'p']: 123,
+    [Symbol.toStringTag]: 'Goodbye', // (A)
+    // The main use case for computed keys is having symbols as property keys (line A).
+};
+
+assert.equal(obj['Hello world!'], true);
+assert.equal(obj.prop, 123);
+assert.equal(obj[Symbol.toStringTag], 'Goodbye');
+
+// * Note that the square brackets operator for getting and setting properties works with arbitrary expressions:
+assert.equal(obj['p'+'r'+'o'+'p'], 123);
+assert.equal(obj['==> prop'.slice(4)], 123);
+
+// Methods can have computed property keys, too:
+const methodKey = Symbol();
+const obj = {
+  [methodKey]() {
+    return 'Yes!';
+  },
+};
+
+assert.equal(obj[methodKey](), 'Yes!');
+
+// * 28.7.3 The in operator: is there a property with a given key? #
+const obj = {
+    alpha: 'abc',
+    beta: false,
+  };
+  
+  assert.equal('alpha' in obj, true);
+  assert.equal('beta' in obj, true);
+  assert.equal('unknownKey' in obj, false);
+  
+// * 28.7.3.1 Checking if a property exists via truthiness 
+// We can also use a truthiness check to determine if a property exists:
+assert.equal(
+    obj.alpha ? 'exists' : 'does not exist',
+    'exists');
+assert.equal(
+    obj.unknownKey ? 'exists' : 'does not exist',
+    'does not exist');
+// ! There is, however, one important caveat: truthiness checks fail if the property exists, but has a falsy value (undefined, null, false, 0, "", etc.):
+assert.equal(
+    obj.beta ? 'exists' : 'does not exist',
+    'does not exist'); // should be: 'exists'
+
+// * 28.7.4 Deleting properties 
+const obj = {
+    myProp: 123,
+  };
+  
+  assert.deepEqual(Object.keys(obj), ['myProp']);
+  delete obj.myProp;
+  assert.deepEqual(Object.keys(obj), []);
+  
+// * 28.7.5 Enumerability 
+const enumerableSymbolKey = Symbol('enumerableSymbolKey');
+const nonEnumSymbolKey = Symbol('nonEnumSymbolKey');
+
+// We create enumerable properties via an object literal
+const obj = {
+  enumerableStringKey: 1,
+  [enumerableSymbolKey]: 2,
+}
+
+// For non-enumerable properties, we need a more powerful tool
+Object.defineProperties(obj, {
+  nonEnumStringKey: {
+    value: 3,
+    enumerable: false,
+  },
+  [nonEnumSymbolKey]: {
+    value: 4,
+    enumerable: false,
+  },
+});
+
+// Non-enumerable properties are ignored by spreading:
+assert.deepEqual(
+  {...obj},
+  {
+    enumerableStringKey: 1,
+    [enumerableSymbolKey]: 2,
+  }
+);
+
+// * 28.7.6 Listing property keys via Object.keys() etc.
+const enumerableSymbolKey = Symbol('enumerableSymbolKey');
+const nonEnumSymbolKey = Symbol('nonEnumSymbolKey');
+
+const obj = {
+  enumerableStringKey: 1,
+  [enumerableSymbolKey]: 2,
+}
+Object.defineProperties(obj, {
+  nonEnumStringKey: {
+    value: 3,
+    enumerable: false,
+  },
+  [nonEnumSymbolKey]: {
+    value: 4,
+    enumerable: false,
+  },
+});
+
+assert.deepEqual(
+  Object.keys(obj),
+  ['enumerableStringKey']
+);
+assert.deepEqual(
+  Object.getOwnPropertyNames(obj),
+  ['enumerableStringKey', 'nonEnumStringKey']
+);
+assert.deepEqual(
+  Object.getOwnPropertySymbols(obj),
+  [enumerableSymbolKey, nonEnumSymbolKey]
+);
+assert.deepEqual(
+  Reflect.ownKeys(obj),
+  [
+    'enumerableStringKey', 'nonEnumStringKey',
+    enumerableSymbolKey, nonEnumSymbolKey,
+  ]
+);
+
+// * 28.7.7 Listing property values via Object.values() 
+// todo: Object.values() lists the values of all enumerable string-keyed properties of an object:
+const firstName = Symbol('firstName');
+const obj = {
+  [firstName]: 'Jane',
+  lastName: 'Doe',
+};
+assert.deepEqual(
+  Object.values(obj),
+  ['Doe']);
+
+// * 28.7.8 Listing property entries via Object.entries() [ES2017]
+// todo: Object.entries() lists all enumerable string-keyed properties as key-value pairs. Each pair is encoded as a two-element Array:
+const firstName = Symbol('firstName');
+const obj = {
+  [firstName]: 'Jane',
+  lastName: 'Doe',
+};
+assert.deepEqual(
+  Object.entries(obj),
+  [
+    ['lastName', 'Doe'],
+]);
+
+// * 28.7.8.1 A simple implementation of Object.entries() 
+function entries(obj) {
+    return Object.keys(obj)
+    .map(key => [key, obj[key]]);
+}
+
+// * 28.7.9 Properties are listed deterministically
+// The following example demonstrates how property keys are sorted according to these rules:
+> Object.keys({b:0,a:0, 10:0,2:0})
+[ '2', '10', 'b', 'a' ]
+
+// * 28.7.10 Assembling objects via Object.fromEntries() [ES2019] 
+// todo: Given an iterable over [key, value] pairs, Object.fromEntries() creates an object:
+const symbolKey = Symbol('symbolKey');
+assert.deepEqual(
+  Object.fromEntries(
+    [
+      ['stringKey', 1],
+      [symbolKey, 2],
+    ]
+  ),
+  {
+    stringKey: 1,
+    [symbolKey]: 2,
+  }
+);
+// * 28.7.10.1 Example: pick() 
+// * 28.7.10.2 Example: invert() 
+
+// * 28.7.10.3 A simple implementation of Object.fromEntries()
+// todo: The following function is a simplified version of Object.fromEntries():
+function fromEntries(iterable) {
+    const result = {};
+    for (const [key, value] of iterable) {
+      let coercedKey;
+      if (typeof key === 'string' || typeof key === 'symbol') {
+        coercedKey = key;
+      } else {
+        coercedKey = String(key);
+      }
+      result[coercedKey] = value;
+    }
+    return result;
+  }
+
+// * 28.7.11 The pitfalls of using an object as a dictionary 
+// ! If we use plain objects (created via object literals) as dictionaries, we have to look out for two pitfalls.
+// * 1_The first pitfall is that the in operator also finds inherited properties:
+const dict = {};
+assert.equal('toString' in dict, true);
+// * We want dict to be treated as empty, but the in operator detects the properties it inherits from its prototype, Object.prototype.
+// * 2_The second pitfall is that we can’t use the property key __proto__ because it has special powers (it sets the prototype of the object):
+const dict = {};
+
+dict['__proto__'] = 123;
+// No property was added to dict:
+assert.deepEqual(Object.keys(dict), []);
+
+// * 28.7.11.1 Safely using objects as dictionaries
+/*
+ * So how do we avoid the two pitfalls?
+ * If we can, we use Maps.
+ * If we can’t, we use a library
+ * If that’s not possible or desired, we use an object without a prototype.
+*/
+// The following code demonstrates using prototype-less objects as dictionaries:
+const dict = Object.create(null); // prototype is `null`
+
+assert.equal('toString' in dict, false); // (A)
+
+dict['__proto__'] = 123;
+assert.deepEqual(Object.keys(dict), ['__proto__']);
+/*
+ * We avoided both pitfalls:
+ * First, a property without a prototype does not inherit any properties (line A).
+ * Second, in modern JavaScript, __proto__ is implemented via
+ * -Object.prototype. That means that it is switched off if Object.prototype is not in the prototype chain.
+*/
+
+// * 28.8 Property attributes and freezing objects (advanced) 
+// * 28.8.1 Property attributes and property descriptors [ES5]
+/* 
+* Just as objects are composed of properties, properties are composed of attributes. 
+* writable: Is it possible to change the value of the property?
+* enumerable: Is the property considered by Object.keys(), spreading, etc.?
+*/
+const obj = { myProp: 123 };
+assert.deepEqual(
+  Object.getOwnPropertyDescriptor(obj, 'myProp'),
+  {
+    value: 123,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+// And this is how we change the attributes of obj.myProp:
+assert.deepEqual(Object.keys(obj), ['myProp']);
+
+// Hide property `myProp` from Object.keys()
+// by making it non-enumerable
+Object.defineProperty(obj, 'myProp', {
+  enumerable: false,
+});
+
+assert.deepEqual(Object.keys(obj), []);
+
+// ? Further reading:
+// ? Enumerability is covered in greater detail earlier in this chapter.
+// ? For more information on property attributes and property descriptors, see Deep JavaScript.
+
+// * 28.8.2 Freezing objects [ES5]
+// todo: Object.freeze(obj) makes obj completely immutable: We can’t change properties, add properties, or change its prototype – for example:
+const frozen = Object.freeze({ x: 2, y: 5 });
+assert.throws(
+  () => { frozen.x = 7 },
+  {
+    name: 'TypeError',
+    message: /^Cannot assign to read only property 'x'/,
+  });
+// * Under the hood, Object.freeze() changes the attributes of properties.
+// ! There is one caveat: Object.freeze(obj) freezes shallowly. That is, only the properties of obj are frozen but not objects stored in properties.
+
+// * 28.9 Prototype chains
+/*
+ * Prototypes are JavaScript’s only inheritance mechanism: Each object has a prototype that is either null or an object. In the latter case，
+ * - the object inherits all of the prototype’s properties.
+ */
+// * In an object literal, we can set the prototype via the special property __proto__:
+const proto = {
+    protoProp: 'a',
+  };
+  const obj = {
+    __proto__: proto,
+    objProp: 'b',
+  };
+  
+  // obj inherits .protoProp:
+  assert.equal(obj.protoProp, 'a');
+  assert.equal('protoProp' in obj, true);
+/*
+ * Given that a prototype object can have a prototype itself, we get a chain of objects – the so-called prototype chain.
+ * - Inheritance gives us the impression that we are dealing with single objects, but we are actually dealing with chains of objects.
+*/
+// * Fig. 9 shows what the prototype chain of obj looks like.
+// https://exploringjs.com/impatient-js/img-book/objects/oo_proto_chain.svg
+// * Figure 9: obj starts a chain of objects that continues with proto and other objects.
+// * Non-inherited properties are called own properties. obj has one own property, .objProp.
 
 
+// * 28.9.1 JavaScript’s operations: all properties vs. own properties
+> const obj = { one: 1 };
+> typeof obj.one // own
+'number'
+> typeof obj.toString // inherited
+'function'
+> Object.keys(obj)
+[ 'one' ]
 
+// * 28.9.2 Pitfall: only the first member of a prototype chain is mutated
+const proto = {
+  protoProp: 'a',
+};
+const obj = {
+  __proto__: proto,
+  objProp: 'b',
+};
+// In the beginning, obj has one own property
+assert.deepEqual(Object.keys(obj), ['objProp']);
 
+obj.protoProp = 'x'; // (A)
 
+// We created a new own property:
+assert.deepEqual(Object.keys(obj), ['objProp', 'protoProp']);
 
+// The inherited property itself is unchanged:
+assert.equal(proto.protoProp, 'a');
 
+// The own property overrides the inherited property:
+assert.equal(obj.protoProp, 'x');
 
+// * The prototype chain of obj is depicted in fig. 10.
+https://exploringjs.com/impatient-js/img-book/objects/oo_overriding.svg
 
+// * 28.9.3 Tips for working with prototypes (advanced) 
+// * 28.9.3.1 Getting and setting prototypes 
+Object.getPrototypeOf(obj: Object) : Object
+Object.create(proto: Object) : Object
 
+// * If we have to, we can use Object.setPrototypeOf() to change the prototype of an existing object. But that may affect performance negatively.
 
+// This is how these features are used:
+const proto1 = {};
+const proto2a = {};
+const proto2b = {};
 
+const obj1 = {
+  __proto__: proto1,
+  a: 1,
+  b: 2,
+};
+assert.equal(Object.getPrototypeOf(obj1), proto1);
 
+const obj2 = Object.create(
+  proto2a,
+  {
+    a: {
+      value: 1,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    },
+    b: {
+      value: 2,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    },  
+  }
+);
+assert.equal(Object.getPrototypeOf(obj2), proto2a);
 
+Object.setPrototypeOf(obj2, proto2b);
+assert.equal(Object.getPrototypeOf(obj2), proto2b);
 
+// * 28.9.3.2 Checking if an object is in the prototype chain of another object
+const a = {};
+const b = {__proto__: a};
+const c = {__proto__: b};
 
+assert.equal(a.isPrototypeOf(b), true);
+assert.equal(a.isPrototypeOf(c), true);
 
+assert.equal(c.isPrototypeOf(a), false);
+assert.equal(a.isPrototypeOf(a), false);
 
+// * 28.9.4 Object.hasOwn(): Is a given property own (non-inherited)? [ES2022] 
+const proto = {
+  protoProp: 'protoProp',
+};
+const obj = {
+  __proto__: proto,
+  objProp: 'objProp',
+}
+assert.equal('protoProp' in obj, true); // (A)
+assert.equal(Object.hasOwn(obj, 'protoProp'), false); // (B)
+assert.equal(Object.hasOwn(proto, 'protoProp'), true); // (C)
+// * Alternative before ES2022: .hasOwnProperty() but the referenced section explains how to work around them.
 
+// * 28.9.5 Sharing data via prototypes
+// ?  How can we avoid duplicating that method?
+const jane = {
+  firstName: 'Jane',
+  describe() {
+    return 'Person named '+this.firstName;
+  },
+};
+const tarzan = {
+  firstName: 'Tarzan',
+  describe() {
+    return 'Person named '+this.firstName;
+  },
+};
 
+assert.equal(jane.describe(), 'Person named Jane');
+assert.equal(tarzan.describe(), 'Person named Tarzan');
 
+// * We can move it to an object PersonProto and make that object a prototype of both jane and tarzan:
 
+const PersonProto = {
+  describe() {
+    return 'Person named ' + this.firstName;
+  },
+};
+const jane = {
+  __proto__: PersonProto,
+  firstName: 'Jane',
+};
+const tarzan = {
+  __proto__: PersonProto,
+  firstName: 'Tarzan',
+};
+// * The name of the prototype reflects that both jane and tarzan are persons.
+https://exploringjs.com/impatient-js/img-book/objects/oo_person_shared.svg
+// * Figure 11: Objects jane and tarzan share method .describe(), via their common prototype PersonProto.
 
-
-
+// * When we make the method call jane.describe(), this points to the receiver of that method call, jane
+assert.equal(jane.describe(), 'Person named Jane');
+assert.equal(tarzan.describe(), 'Person named Tarzan');
 
 
 
